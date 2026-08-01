@@ -1,0 +1,11 @@
+[project]
+name = "agent-tool-error-taxonomy-builder-20260801"
+version = "0.1.0"
+description = "Classify AI agent tool failures from logs and produce a repair-first taxonomy."
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [{name = "maxi-maxima"}]
+
+[project.scripts]
+agent-tool-error-taxonomy-builder-20260801 = "agent_tool_error_taxonomy_builder_20260801.cli:main"
