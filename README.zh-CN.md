@@ -11,8 +11,11 @@ AI 编码 Agent 的失败常常重复出现，但原始日志太吵，团队很�
 ```bash
 python -m agent_tool_error_taxonomy_builder_20260801.cli examples/agent.log
 python -m agent_tool_error_taxonomy_builder_20260801.cli examples/agent.log --format json
+python -m agent_tool_error_taxonomy_builder_20260801.cli examples/agent.log --format sarif > agent-errors.sarif
 python -m unittest discover -s tests
 ```
+
+SARIF 输出会把每个已分类事件映射到原始日志文件和行号，便于 CI 系统和 GitHub Code Scanning 直接显示注解。
 
 ## 示例
 
@@ -30,6 +33,5 @@ Total events: 4
 
 ## 路线图
 
-- 支持 SARIF 供 CI 标注
 - 支持不同 Agent 框架的自定义规则包
 - 对比多次运行的错误趋势

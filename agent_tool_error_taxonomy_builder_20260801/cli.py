@@ -1,5 +1,6 @@
-import argparse, json, re, sys
-from collections import Counter, defaultdict
+import argparse, json, re
+from collections import Counter
+from pathlib import Path
 
 RULES = [
     ('auth', re.compile(r'\b(401|403|unauthori[sz]ed|forbidden|permission denied|login required)\b', re.I), 'Refresh credentials or reduce requested scope.'),
@@ -34,12 +35,62 @@ def markdown(report):
         out.append(f"- L{e['line']} `{e['type']}`: {e['message']} Fix: {e['suggested_fix']}")
     return '\n'.join(out)+'\n'
 
+def sarif(report, logfile):
+    levels = {'unsafe_command': 'error', 'unknown': 'note'}
+    rules = [
+        {
+            'id': key,
+            'name': key,
+            'shortDescription': {'text': fix},
+            'defaultConfiguration': {'level': levels.get(key, 'warning')},
+        }
+        for key, _rx, fix in RULES
+    ]
+    rules.append({
+        'id': 'unknown',
+        'name': 'unknown',
+        'shortDescription': {'text': 'Unclassified agent tool error.'},
+        'defaultConfiguration': {'level': 'note'},
+    })
+    uri = Path(logfile).as_posix()
+    results = [
+        {
+            'ruleId': event['type'],
+            'level': levels.get(event['type'], 'warning'),
+            'message': {'text': f"{event['message']} Suggested fix: {event['suggested_fix']}"},
+            'locations': [{
+                'physicalLocation': {
+                    'artifactLocation': {'uri': uri},
+                    'region': {'startLine': event['line']},
+                }
+            }],
+        }
+        for event in report['events']
+    ]
+    return {
+        '$schema': 'https://json.schemastore.org/sarif-2.1.0.json',
+        'version': '2.1.0',
+        'runs': [{
+            'tool': {'driver': {
+                'name': 'agent-tool-error-taxonomy-builder',
+                'informationUri': 'https://github.com/maxi-maxima/agent-tool-error-taxonomy-builder-20260801',
+                'rules': rules,
+            }},
+            'results': results,
+        }],
+    }
+
 def main(argv=None):
     ap=argparse.ArgumentParser(description='Build a taxonomy of AI agent tool errors from logs.')
     ap.add_argument('logfile')
-    ap.add_argument('--format', choices=['json','markdown'], default='markdown')
+    ap.add_argument('--format', choices=['json','markdown','sarif'], default='markdown')
     ns=ap.parse_args(argv)
-    text=open(ns.logfile, encoding='utf-8').read()
+    text=Path(ns.logfile).read_text(encoding='utf-8')
     report=analyze(text)
-    print(json.dumps(report, indent=2) if ns.format=='json' else markdown(report))
+    if ns.format == 'sarif':
+        print(json.dumps(sarif(report, ns.logfile), indent=2))
+    elif ns.format == 'json':
+        print(json.dumps(report, indent=2))
+    else:
+        print(markdown(report))
 if __name__=='__main__': main()

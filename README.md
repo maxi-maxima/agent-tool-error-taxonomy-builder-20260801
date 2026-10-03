@@ -11,8 +11,11 @@ Terminal agents, MCP servers, scheduled automations, and multi-agent coding work
 ```bash
 python -m agent_tool_error_taxonomy_builder_20260801.cli examples/agent.log
 python -m agent_tool_error_taxonomy_builder_20260801.cli examples/agent.log --format json
+python -m agent_tool_error_taxonomy_builder_20260801.cli examples/agent.log --format sarif > agent-errors.sarif
 python -m unittest discover -s tests
 ```
+
+The SARIF output maps every classified event to its source log and line number, so CI systems and GitHub Code Scanning can surface the taxonomy as annotations.
 
 ## Example
 
@@ -30,6 +33,5 @@ Total events: 4
 
 ## Roadmap
 
-- SARIF export for CI annotations
 - Custom rule packs per agent framework
 - Trend comparison across multiple runs
