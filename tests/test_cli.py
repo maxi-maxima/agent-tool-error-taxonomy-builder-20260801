@@ -12,6 +12,23 @@ class AnalyzeTests(unittest.TestCase):
         self.assertEqual(report['counts']['schema'], 1)
         self.assertEqual(report['counts']['auth'], 1)
 
+    def test_keeps_rule_matches_without_generic_error_words(self):
+        report = analyze(
+            'getaddrinfo ENOTFOUND api.example.com\n'
+            'too many requests\n'
+            'EACCES opening cache\n'
+            'git reset --hard HEAD~1\n'
+            'INFO TLS connection established successfully\n'
+            'INFO schema validation passed\n'
+            'INFO cache opened read-only successfully\n'
+            'operation completed\n'
+        )
+        self.assertEqual(report['total_events'], 4)
+        self.assertEqual(
+            report['counts'],
+            {'network': 1, 'rate_limit': 1, 'filesystem': 1, 'unsafe_command': 1},
+        )
+
     def test_sarif_maps_events_to_log_locations(self):
         report = analyze('tool failed: 429 rate limit\nJSONDecodeError invalid json\n')
         payload = sarif(report, 'logs/agent.log')

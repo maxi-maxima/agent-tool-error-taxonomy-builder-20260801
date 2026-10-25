@@ -10,6 +10,14 @@ RULES = [
     ('filesystem', re.compile(r'\b(no such file|not found|EACCES|read-only|path does not exist)\b', re.I), 'Check working directory, allowlist, and path assumptions.'),
     ('unsafe_command', re.compile(r'\b(rm -rf|git reset --hard|checkout --|DROP TABLE|destructive)\b', re.I), 'Require explicit human approval before execution.'),
 ]
+ERROR_SIGNAL = re.compile(
+    r'\b(error|failed|exception|traceback|denied|timeout|timed out|401|403|429|'
+    r'unauthori[sz]ed|forbidden|login required|rate limit(?:ed| exceeded| reached)|'
+    r'too many requests|quota exceeded|ECONN[A-Z]*|ENOTFOUND|connection reset|'
+    r'jsondecodeerror|invalid json|no such file|not found|EACCES|read-only file system|'
+    r'path does not exist|rm -rf|git reset --hard|checkout --|DROP TABLE|destructive)\b',
+    re.I,
+)
 
 def classify(line):
     for key, rx, fix in RULES:
@@ -20,7 +28,7 @@ def classify(line):
 def analyze(text):
     events=[]
     for i,line in enumerate(text.splitlines(),1):
-        if re.search(r'\b(error|failed|exception|traceback|denied|timeout|429|403|401|jsondecodeerror|invalid json)\b', line, re.I):
+        if ERROR_SIGNAL.search(line):
             kind, fix = classify(line)
             events.append({'line':i,'type':kind,'message':line.strip()[:220],'suggested_fix':fix})
     counts=Counter(e['type'] for e in events)
