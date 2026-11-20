@@ -5,12 +5,13 @@ from agent_tool_error_taxonomy_builder_20260801.cli import analyze, sarif
 
 class AnalyzeTests(unittest.TestCase):
     def test_classifies_common_agent_errors(self):
-        text = 'tool failed: 429 rate limit\nJSONDecodeError invalid json\npermission denied writing file\n'
+        text = 'tool failed: 429 rate limit\nJSONDecodeError invalid json\n403 forbidden calling API\npermission denied writing file\n'
         report = analyze(text)
-        self.assertEqual(report['total_events'], 3)
+        self.assertEqual(report['total_events'], 4)
         self.assertEqual(report['counts']['rate_limit'], 1)
         self.assertEqual(report['counts']['schema'], 1)
         self.assertEqual(report['counts']['auth'], 1)
+        self.assertEqual(report['counts']['filesystem'], 1)
 
     def test_keeps_rule_matches_without_generic_error_words(self):
         report = analyze(
